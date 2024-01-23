@@ -1,0 +1,38 @@
+name: Check for Spam Words
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  check-spam:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Git
+        run: |
+          git config user.email "cpavan331@gmail.com"
+          git config user.name "PavanChakrasali"
+
+      - name: List changed files
+        id: list-changes
+        run: |
+          echo "::set-output name=changed-files::$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})"
+
+      - name: Check for spam words
+        run: |
+          CHANGED_FILES=$(echo "${{ steps.list-changes.outputs.changed-files }}" | grep -E '\.txt$')  # Adjust the file extension as needed
+          
+          for FILE in $CHANGED_FILES; do
+            if grep -q -e 'warning\|congrats' "$FILE"; then
+              echo "File $FILE contains spam words. Moving to spam-developer-branch."
+              git checkout -b main
+              git mv "$FILE" .
+              git commit -m "Move $FILE to spam-developer-branch due to spam words"
+              git push origin main
+            fi
+          done
