@@ -27,7 +27,7 @@ jobs:
       run: |
         git config user.name "PavanChakrasali"
         git config user.email "cpavan331@gmail.com"
-        git remote set-url origin https://x-access-token:${{ secrets.PC }}https://github.com/PavanChakrasali/demppc.git
+        git remote set-url origin https://x-access-token:${{ secrets.PC }}@https://github.com/PavanChakrasali/demppc.git
     - name: Create and push to deployment branch
       run: |
         git checkout -b prod
