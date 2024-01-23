@@ -1,38 +1,34 @@
-name: Check for Spam Words
+name: Python CI/CD Workflow
 
-on:
-  push:
-    branches:
-      - prod
+on: [push]
 
 jobs:
-  check-spam:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run Tests
+      run: python -m unittest discover
 
-      - name: Set up Git
-        run: |
-          git config user.email "cpavan331@gmail.com"
-          git config user.name "PavanChakrasali"
-
-      - name: List changed files
-        id: list-changes
-        run: |
-          echo "::set-output name=changed-files::$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})"
-
-      - name: Check for spam words
-        run: |
-          CHANGED_FILES=$(echo "${{ steps.list-changes.outputs.changed-files }}" | grep -E '\.txt$')  # Adjust the file extension as needed
-          
-          for FILE in $CHANGED_FILES; do
-            if grep -q -e 'warning\|congrats' "$FILE"; then
-              echo "File $FILE contains spam words. Moving to spam-developer-branch."
-              git checkout -b main
-              git mv "$FILE" .
-              git commit -m "Move $FILE to spam-developer-branch due to spam words"
-              git push origin main
-            fi
-          done
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Git to use the token
+      run: |
+        git config user.name "PavanChakrasali"
+        git config user.email "cpavan331@gmail.com"
+        git remote set-url origin https://x-access-token:${{ secrets.CICD }}https://github.com/PavanChakrasali/demppc.git
+    - name: Create and push to deployment branch
+      run: |
+        git checkout -b deployment-branch
+        git push -f origin deployment-branch  # Using force push here
